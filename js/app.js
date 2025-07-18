@@ -1,7 +1,7 @@
 // Script.js
 // Configuration
 const MATCH_QR_STRING = "f29cZb7Q6DuaMjYkTLV3nxR9KEqV2XoBslrHcwA8d1tZ5UeqgiWTvjNpLEsQ";
-const API_BASE_URL = "https://script.google.com/macros/s/AKfycbxbjvQC_AG20bPnWAH6Bg0nEFfn5G4dMz18KP4HvmpN-2eO15rsjxlo0GC9TlmvmhvD6w/exec";
+const API_BASE_URL = "https://script.google.com/macros/s/AKfycbxYNA_WatKGosPjXD0KfxOL5zPqLfxJTL8e3svKhU4EorfF6jdiJaWbgufg_2PxzY6WBw/exec";
 
 // State variables
 let qrScanner = null;
