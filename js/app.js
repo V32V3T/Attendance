@@ -1,7 +1,7 @@
 // Script.js
 // Configuration
 const MATCH_QR_STRING = "f29cZb7Q6DuaMjYkTLV3nxR9KEqV2XoBslrHcwA8d1tZ5UeqgiWTvjNpLEsQ";
-const API_BASE_URL = "https://script.google.com/macros/s/AKfycbwy9_uK9MQT4Coel5kbU4pi8Qmc7_5hYQkeGJgBAjpQprR5L9FWQgrRwD5iwXKHdw5naQ/exec";
+const API_BASE_URL = "https://script.google.com/macros/s/AKfycbyY-A1YaavQJbo4H-dWs5OUTpu2-Czl8NuBQlv8wOoqIfMluoPkgxzfOos_zLq1wT9plw/exec";
 
 // State variables
 let qrScanner = null;
@@ -795,7 +795,7 @@ async function makeAPICall(action, data) {
         const response = await fetch(API_BASE_URL, {
             method: 'POST',
             headers: {
-                'Content-Type': 'text/plain;chatset=utf-8',
+                'Content-Type': 'application/json',
             },
             body: JSON.stringify(payload)
         });
