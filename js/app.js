@@ -795,7 +795,7 @@ async function makeAPICall(action, data) {
         const response = await fetch(API_BASE_URL, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'text/plain',
             },
             body: JSON.stringify(payload)
         });
