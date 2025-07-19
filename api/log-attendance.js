@@ -32,6 +32,15 @@ export default async function handler(req, res) {
     });
     const rows = getRows.data.values || [];
 
+    // Define header and column indices
+    const header = rows[0] || [];
+    const idIdx = header.indexOf('Employee ID');
+    const dateIdx = header.indexOf('Date');
+    const checkInIdx = header.indexOf('Check-in Time');
+    const checkInLocIdx = header.indexOf('Check-in Location');
+    const checkOutIdx = header.indexOf('Check-out Time');
+    const checkOutLocIdx = header.indexOf('Check-out Location');
+
     // Find if the user is registered (exists in any row, any date)
     let isRegistered = false;
     for (let i = 1; i < rows.length; i++) {
