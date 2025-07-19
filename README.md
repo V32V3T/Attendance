@@ -11,6 +11,7 @@ A web-based QR code attendance tracking system that allows users to register, ch
 - Real-time attendance status updates
 - Location tracking (optional)
 - Mobile-responsive design
+- Timezone-aware timestamps (configured for IST - Indian Standard Time)
 
 ## Setup Instructions
 
@@ -27,6 +28,21 @@ The following environment variables need to be set in your Vercel project:
 
 - `GOOGLE_SERVICE_ACCOUNT`: JSON string of your Google service account credentials
 - `GOOGLE_SHEET_ID`: ID of the Google Sheet where attendance data will be stored
+
+### Timezone Configuration
+
+The application is configured to use **Indian Standard Time (IST)** by default. All timestamps for check-in and check-out are recorded in IST regardless of where the Vercel server is hosted.
+
+To change the timezone, modify the `TIMEZONE` constant in `/api/log-attendance.js`:
+```javascript
+const TIMEZONE = 'Asia/Kolkata'; // Change this to your desired timezone
+```
+
+Common timezone values:
+- `'Asia/Kolkata'` - Indian Standard Time (IST)
+- `'America/New_York'` - Eastern Time
+- `'Europe/London'` - Greenwich Mean Time
+- `'Asia/Tokyo'` - Japan Standard Time
 
 ### Google Sheet Structure
 

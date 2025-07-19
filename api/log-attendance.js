@@ -2,20 +2,45 @@ import { google } from 'googleapis';
 
 // Configuration
 const MATCH_QR_STRING = "f29cZb7Q6DuaMjYkTLV3nxR9KEqV2XoBslrHcwA8d1tZ5UeqgiWTvjNpLEsQ";
+const TIMEZONE = 'Asia/Kolkata'; // Indian Standard Time (IST)
 
 // Helper functions for date and time
 function getTodayDate() {
+  // Get today's date in the configured timezone
   const now = new Date();
-  return now.toISOString().slice(0, 10); // yyyy-mm-dd format
+  return now.toLocaleDateString('en-CA', { 
+    timeZone: TIMEZONE 
+  }); // Returns YYYY-MM-DD format
 }
 
 function getNowTime() {
-  return new Date().toLocaleTimeString('en-GB', { hour12: false });
+  // Get current time in the configured timezone
+  const now = new Date();
+  return now.toLocaleTimeString('en-GB', { 
+    timeZone: TIMEZONE,
+    hour12: false 
+  });
+}
+
+function getNowDateTime() {
+  // Get current date and time in the configured timezone for logging
+  const now = new Date();
+  return now.toLocaleString('en-IN', { 
+    timeZone: TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
 }
 
 // Debug helper
 function logDebug(message, data) {
-  console.log(`[DEBUG] ${message}`, data);
+  const timestamp = getNowDateTime();
+  console.log(`[DEBUG ${timestamp}] ${message}`, data);
 }
 
 export default async function handler(req, res) {
@@ -338,7 +363,13 @@ export default async function handler(req, res) {
       const checkInTime = getNowTime();
       const checkInLocation = location ? `${location.latitude},${location.longitude}` : '';
       
-      logDebug('Updating check-in data', { checkInTime, checkInLocation });
+      logDebug('Updating check-in data', { 
+        checkInTime, 
+        checkInLocation, 
+        timezone: TIMEZONE,
+        serverTime: new Date().toISOString(),
+        localTime: getNowDateTime()
+      });
       
       try {
         const updateRange = `Sheet1!${String.fromCharCode(65 + checkInIdx)}${userRowIdx + 1}:${String.fromCharCode(65 + checkInLocIdx)}${userRowIdx + 1}`;
@@ -416,7 +447,13 @@ export default async function handler(req, res) {
       const checkOutTime = getNowTime();
       const checkOutLocation = location ? `${location.latitude},${location.longitude}` : '';
       
-      logDebug('Updating check-out data', { checkOutTime, checkOutLocation });
+      logDebug('Updating check-out data', { 
+        checkOutTime, 
+        checkOutLocation, 
+        timezone: TIMEZONE,
+        serverTime: new Date().toISOString(),
+        localTime: getNowDateTime()
+      });
       
       try {
         const updateRange = `Sheet1!${String.fromCharCode(65 + checkOutIdx)}${userRowIdx + 1}:${String.fromCharCode(65 + checkOutLocIdx)}${userRowIdx + 1}`;
