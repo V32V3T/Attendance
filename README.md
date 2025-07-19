@@ -5,6 +5,7 @@ A web-based QR code attendance tracking system that allows users to register, ch
 ## Features
 
 - User registration with personal details
+- Auto-generated sequential Employee IDs (6-digit format: 000001, 000002, etc.)
 - QR code scanning for attendance
 - Manual check-in and check-out options
 - Upload QR code images from gallery
@@ -68,9 +69,19 @@ If the sheet doesn't exist with these headers, the application will create them 
 ## Usage
 
 1. Open the application in a web browser
-2. Fill in your personal information and register
-3. Scan the QR code to check in
-4. Scan the QR code again to check out when leaving
+2. Fill in your personal information (Name, Mobile, Department) and register
+3. Your Employee ID will be automatically generated (e.g., 000001, 000002, etc.)
+4. Scan the QR code to check in
+5. Scan the QR code again to check out when leaving
+
+## Employee ID System
+
+The application automatically generates sequential 6-digit Employee IDs:
+- First user: `000001`
+- Second user: `000002`
+- And so on...
+
+The system prevents duplicate registrations by checking mobile numbers. If a user tries to register with an existing mobile number, they will be shown their existing Employee ID.
 
 ## QR Code
 

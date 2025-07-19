@@ -37,6 +37,60 @@ function getNowDateTime() {
   });
 }
 
+// Employee ID generation helper
+async function generateNextEmployeeId(sheets, sheetId) {
+  try {
+    logDebug('Generating next employee ID');
+    
+    // Get all rows to find the highest employee ID
+    const getRows = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: 'Sheet1',
+    });
+    const rows = getRows.data.values || [];
+    
+    if (rows.length <= 1) {
+      // No data rows (only header or empty), start with 000001
+      logDebug('No existing employee IDs found, starting with 000001');
+      return '000001';
+    }
+    
+    // Find the Employee ID column index
+    const header = rows[0] || [];
+    const idIdx = header.indexOf('Employee ID');
+    
+    if (idIdx === -1) {
+      logDebug('Employee ID column not found, starting with 000001');
+      return '000001';
+    }
+    
+    let maxId = 0;
+    
+    // Check all existing employee IDs to find the highest number
+    for (let i = 1; i < rows.length; i++) {
+      const employeeId = rows[i][idIdx];
+      if (employeeId && typeof employeeId === 'string') {
+        // Extract numeric part (assuming format like 000001, 000002, etc.)
+        const numericPart = parseInt(employeeId.replace(/\D/g, ''), 10);
+        if (!isNaN(numericPart) && numericPart > maxId) {
+          maxId = numericPart;
+        }
+      }
+    }
+    
+    // Generate next ID with 6-digit padding
+    const nextId = (maxId + 1).toString().padStart(6, '0');
+    logDebug('Generated next employee ID', { maxId, nextId });
+    
+    return nextId;
+  } catch (error) {
+    logDebug('Error generating employee ID', error);
+    // Fallback to timestamp-based ID if there's an error
+    const timestamp = Date.now().toString().slice(-6);
+    return timestamp.padStart(6, '0');
+  }
+}
+
 // Debug helper
 function logDebug(message, data) {
   const timestamp = getNowDateTime();
@@ -207,32 +261,49 @@ export default async function handler(req, res) {
 
     // --- Registration ---
     if (action === 'register') {
-      logDebug('Processing registration', { fullName, employeeId });
+      logDebug('Processing registration', { fullName, mobile, department });
       
-      // If user is already registered (in any row), do not register again
-      if (isRegistered) {
-        logDebug('User already exists', { employeeId });
-        return res.status(200).json({ 
-          status: 'exists', 
-          message: 'User already registered',
-          userData: registeredUserData
-        });
-      }
-      
-      // Validate required fields
-      if (!fullName || !mobile || !employeeId || !department) {
-        logDebug('Missing required fields', { fullName, mobile, employeeId, department });
+      // Validate required fields (employeeId will be auto-generated)
+      if (!fullName || !mobile || !department) {
+        logDebug('Missing required fields', { fullName, mobile, department });
         return res.status(400).json({ 
           status: 'error', 
-          message: 'Missing required fields for registration' 
+          message: 'Missing required fields for registration (Full Name, Mobile, Department)' 
         });
       }
       
-      // Append new row for today
+      // Check if user is already registered by mobile number (since employeeId will be auto-generated)
+      let existingUser = null;
+      for (let i = 1; i < rows.length; i++) {
+        if (rows[i][mobileIdx] === mobile) {
+          existingUser = {
+            fullName: rows[i][nameIdx] || '',
+            mobile: rows[i][mobileIdx] || '',
+            employeeId: rows[i][idIdx] || '',
+            department: rows[i][deptIdx] || ''
+          };
+          break;
+        }
+      }
+      
+      if (existingUser) {
+        logDebug('User already exists with mobile number', { mobile, existingUser });
+        return res.status(200).json({ 
+          status: 'exists', 
+          message: 'User already registered with this mobile number',
+          userData: existingUser
+        });
+      }
+      
+      // Generate next employee ID
+      const generatedEmployeeId = await generateNextEmployeeId(sheets, sheetId);
+      logDebug('Generated employee ID', { generatedEmployeeId });
+      
+      // Append new row for today with generated employee ID
       const newRow = [
         fullName || '',
         mobile || '',
-        employeeId || '',
+        generatedEmployeeId,
         department || '',
         today,
         '', // check-in time
@@ -251,14 +322,14 @@ export default async function handler(req, res) {
           requestBody: { values: [newRow] }
         });
         
-        logDebug('Registration successful');
+        logDebug('Registration successful with generated employee ID', { generatedEmployeeId });
         return res.status(200).json({ 
           status: 'success', 
           message: 'Registration successful',
           userData: {
             fullName,
             mobile,
-            employeeId,
+            employeeId: generatedEmployeeId,
             department
           }
         });

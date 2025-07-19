@@ -589,8 +589,8 @@ async function handleFormSubmission(event) {
 
         console.log('    Form data collected:', userData);
 
-        // Validate form data
-        if (!userData.fullName || !userData.mobile || !userData.employeeId || !userData.department) {
+        // Validate form data (employeeId will be auto-generated)
+        if (!userData.fullName || !userData.mobile || !userData.department) {
             console.warn('   Form validation failed - missing required fields');
             showMessage('Please fill in all required fields.', 'error');
             return;
@@ -604,12 +604,8 @@ async function handleFormSubmission(event) {
             return;
         }
 
-        // Validate employee ID format (basic validation)
-        if (userData.employeeId.length < 3) {
-            console.warn('   Form validation failed - invalid employee ID');
-            showMessage('Employee ID must be at least 3 characters long.', 'error');
-            return;
-        }
+        // Remove employeeId from userData since it will be auto-generated
+        delete userData.employeeId;
 
         // Save to session storage as backup
         console.log('Saving temp user data to session storage...');
@@ -624,17 +620,25 @@ async function handleFormSubmission(event) {
 
         if (response.status === 'success') {
             console.log('Registration successful');
-            currentUser = userData;
+            // Use the userData returned from server which includes the generated employeeId
+            const finalUserData = response.userData;
+            currentUser = finalUserData;
             isUserRegistered = true;
-            localStorage.setItem('qr_attendance_user', encodeUserData(userData));
+            localStorage.setItem('qr_attendance_user', encodeUserData(finalUserData));
             sessionStorage.removeItem('temp_user_data');
 
-            showMessage('Registration successful!', 'success');
+            showMessage(`Registration successful! Your Employee ID is: ${finalUserData.employeeId}`, 'success');
             updateStatus('Registration completed successfully');
 
+            // Update the form to show the generated employee ID
+            const employeeIdInput = document.getElementById('employeeId');
+            if (employeeIdInput) {
+                employeeIdInput.value = finalUserData.employeeId;
+            }
+
             disableForm();
-            renderUserInfo(userData);
-            await updateStatusCard(userData.employeeId);
+            renderUserInfo(finalUserData);
+            await updateStatusCard(finalUserData.employeeId);
             enableAttendanceButtons();
 
         } else if (response.status === 'exists') {
