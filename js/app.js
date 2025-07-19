@@ -759,10 +759,16 @@ async function updateStatusCard(employeeId) {
         switch (response.status) {
             case 'not_registered':
                 console.log('   User not registered');
+                currentUser = null;
+                isUserRegistered = false;
                 enableForm();
                 updateStatus('Please complete the registration form');
                 if (checkInBtn) checkInBtn.disabled = true;
                 if (checkOutBtn) checkOutBtn.disabled = true;
+                if (userInfoDisplay) userInfoDisplay.style.display = 'none';
+                localStorage.removeItem('qr_attendance_user');
+                sessionStorage.removeItem('temp_user_data');
+                showMessage('You are not registered. Please fill out the form to register.', 'warning');
                 break;
             case 'not_checked_in':
                 console.log('   User not checked in today');
@@ -770,28 +776,41 @@ async function updateStatusCard(employeeId) {
                 statusCard.className = 'status-card status-not-checked-in';
                 if (checkInBtn) checkInBtn.disabled = false;
                 if (checkOutBtn) checkOutBtn.disabled = true;
+                if (userInfoDisplay) userInfoDisplay.style.display = 'block';
+                showMessage('You are registered. Please check in to mark your attendance.', 'info');
                 break;
-
             case 'checked_in':
                 console.log('   User checked in at:', response.check_in_time);
                 statusText.textContent = `Checked in at ${response.check_in_time}`;
                 statusCard.className = 'status-card status-checked-in';
                 if (checkInBtn) checkInBtn.disabled = true;
                 if (checkOutBtn) checkOutBtn.disabled = false;
+                if (userInfoDisplay) userInfoDisplay.style.display = 'block';
+                showMessage('You have checked in. You can check out when you leave.', 'success');
                 break;
-
             case 'completed':
                 console.log('   User completed attendance - In:', response.check_in_time, 'Out:', response.check_out_time);
                 statusText.textContent = `Completed: In at ${response.check_in_time}, Out at ${response.check_out_time}`;
                 statusCard.className = 'status-card status-completed';
                 if (checkInBtn) checkInBtn.disabled = true;
                 if (checkOutBtn) checkOutBtn.disabled = true;
+                if (userInfoDisplay) userInfoDisplay.style.display = 'block';
+                showMessage('You have already checked out for today. Attendance complete.', 'info');
                 break;
-
+            case 'error':
+                console.warn('   Backend error:', response.message);
+                showMessage(response.message || 'An error occurred. Please try again.', 'error');
+                updateStatus('Error: ' + (response.message || 'Unknown error'));
+                if (checkInBtn) checkInBtn.disabled = true;
+                if (checkOutBtn) checkOutBtn.disabled = true;
+                break;
             default:
                 console.warn('   Unknown status:', response.status);
                 statusText.textContent = 'Status unknown';
                 statusCard.className = 'status-card status-unknown';
+                showMessage('Unknown status received. Please try again.', 'warning');
+                if (checkInBtn) checkInBtn.disabled = true;
+                if (checkOutBtn) checkOutBtn.disabled = true;
                 break;
         }
 
