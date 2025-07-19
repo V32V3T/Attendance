@@ -757,6 +757,13 @@ async function updateStatusCard(employeeId) {
         statusCard.style.display = 'block';
 
         switch (response.status) {
+            case 'not_registered':
+                console.log('   User not registered');
+                enableForm();
+                updateStatus('Please complete the registration form');
+                if (checkInBtn) checkInBtn.disabled = true;
+                if (checkOutBtn) checkOutBtn.disabled = true;
+                break;
             case 'not_checked_in':
                 console.log('   User not checked in today');
                 statusText.textContent = 'Not checked in today';
