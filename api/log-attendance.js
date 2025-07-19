@@ -32,16 +32,16 @@ export default async function handler(req, res) {
     });
     const rows = getRows.data.values || [];
 
-    // Find row for this employeeId and today
-    const header = rows[0] || [];
-    const idIdx = header.indexOf('Employee ID');
-    const dateIdx = header.indexOf('Date');
-    // Adjust indices for removed Day Type column
-    const checkInIdx = header.indexOf('Check-in Time');
-    const checkInLocIdx = header.indexOf('Check-in Location');
-    const checkOutIdx = header.indexOf('Check-out Time');
-    const checkOutLocIdx = header.indexOf('Check-out Location');
+    // Find if the user is registered (exists in any row, any date)
+    let isRegistered = false;
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][idIdx] === employeeId) {
+        isRegistered = true;
+        break;
+      }
+    }
 
+    // Find row for this employeeId and today
     let userRowIdx = -1;
     for (let i = 1; i < rows.length; i++) {
       if (rows[i][idIdx] === employeeId && rows[i][dateIdx] === today) {
@@ -52,10 +52,11 @@ export default async function handler(req, res) {
 
     // --- Registration ---
     if (action === 'register') {
-      if (userRowIdx !== -1) {
-        return res.status(200).json({ status: 'exists', message: 'User already registered today' });
+      // If user is already registered (in any row), do not register again
+      if (isRegistered) {
+        return res.status(200).json({ status: 'exists', message: 'User already registered' });
       }
-      // Append new row (no Day Type column)
+      // Append new row for today
       const newRow = [
         fullName || '',
         mobile || '',
@@ -78,15 +79,37 @@ export default async function handler(req, res) {
 
     // --- Check-in ---
     if (action === 'check-in') {
-      // Debug log
-      console.log('Looking for:', employeeId, today);
-      console.log('Rows:', rows.map(r => [r[idIdx], r[dateIdx]]));
-      if (userRowIdx === -1) {
-        return res.status(400).json({ status: 'error', message: 'User not registered for today' });
+      // Only allow check-in if user is registered
+      if (!isRegistered) {
+        return res.status(400).json({ status: 'error', message: 'User not registered. Please register first.' });
       }
-      const row = rows[userRowIdx];
+      // If no row for today, append a new row for today
+      if (userRowIdx === -1) {
+        const newRow = [
+          '', '', employeeId, '', today, '', '', '', ''
+        ];
+        await sheets.spreadsheets.values.append({
+          spreadsheetId: sheetId,
+          range: 'Sheet1',
+          valueInputOption: 'USER_ENTERED',
+          requestBody: { values: [newRow] }
+        });
+        // Re-fetch rows to get the new row index
+        const getRows2 = await sheets.spreadsheets.values.get({
+          spreadsheetId: sheetId,
+          range: 'Sheet1',
+        });
+        const rows2 = getRows2.data.values || [];
+        userRowIdx = rows2.length - 1;
+      }
+      const getRows3 = await sheets.spreadsheets.values.get({
+        spreadsheetId: sheetId,
+        range: 'Sheet1',
+      });
+      const rows3 = getRows3.data.values || [];
+      const row = rows3[userRowIdx];
       if (row[checkInIdx]) {
-        return res.status(400).json({ status: 'error', message: 'Already checked in' });
+        return res.status(400).json({ status: 'error', message: 'Already checked in for today.' });
       }
       // Update check-in time and location
       const checkInTime = getNowTime();
@@ -103,15 +126,18 @@ export default async function handler(req, res) {
 
     // --- Check-out ---
     if (action === 'check-out') {
+      if (!isRegistered) {
+        return res.status(400).json({ status: 'error', message: 'User not registered. Please register first.' });
+      }
       if (userRowIdx === -1) {
-        return res.status(400).json({ status: 'error', message: 'User not registered for today' });
+        return res.status(400).json({ status: 'error', message: 'No attendance record for today. Please check in first.' });
       }
       const row = rows[userRowIdx];
       if (!row[checkInIdx]) {
-        return res.status(400).json({ status: 'error', message: 'Please check-in first' });
+        return res.status(400).json({ status: 'error', message: 'Please check-in first.' });
       }
       if (row[checkOutIdx]) {
-        return res.status(400).json({ status: 'error', message: 'Already checked out' });
+        return res.status(400).json({ status: 'error', message: 'Already checked out for today.' });
       }
       // Update check-out time and location
       const checkOutTime = getNowTime();
@@ -128,6 +154,9 @@ export default async function handler(req, res) {
 
     // --- Status ---
     if (action === 'status') {
+      if (!isRegistered) {
+        return res.status(200).json({ status: 'not_registered' });
+      }
       if (userRowIdx === -1) {
         return res.status(200).json({ status: 'not_checked_in' });
       }
@@ -138,7 +167,9 @@ export default async function handler(req, res) {
       if (row[checkInIdx] && !row[checkOutIdx]) {
         return res.status(200).json({ status: 'checked_in', check_in_time: row[checkInIdx] });
       }
-      return res.status(200).json({ status: 'completed', check_in_time: row[checkInIdx], check_out_time: row[checkOutIdx] });
+      if (row[checkInIdx] && row[checkOutIdx]) {
+        return res.status(200).json({ status: 'completed', check_in_time: row[checkInIdx], check_out_time: row[checkOutIdx] });
+      }
     }
 
     // --- Unknown action ---
