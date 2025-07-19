@@ -402,11 +402,13 @@ async function handleAuthorizedUser() {
         console.log('Current user state:', { currentUser, isUserRegistered });
 
         if (currentUser && isUserRegistered) {
-            console.log('   User already registered, updating status and enabling buttons...');
             const status = await updateStatusCard(currentUser.employeeId);
             if (status === 'not_checked_in') {
                 // Automatically check in if not already checked in
                 await handleCheckIn();
+            } else if (status === 'checked_in') {
+                // Automatically check out if already checked in
+                await handleCheckOut();
             }
             enableAttendanceButtons();
         } else {
