@@ -403,7 +403,11 @@ async function handleAuthorizedUser() {
 
         if (currentUser && isUserRegistered) {
             console.log('   User already registered, updating status and enabling buttons...');
-            await updateStatusCard(currentUser.employeeId);
+            const status = await updateStatusCard(currentUser.employeeId);
+            if (status === 'not_checked_in') {
+                // Automatically check in if not already checked in
+                await handleCheckIn();
+            }
             enableAttendanceButtons();
         } else {
             console.log('   User not registered, enabling form...');
@@ -745,7 +749,7 @@ async function updateStatusCard(employeeId) {
 
         if (!statusCard || !statusText) {
             console.warn('   Status card elements not found');
-            return;
+            return response.status;
         }
 
         statusCard.style.display = 'block';
@@ -783,9 +787,11 @@ async function updateStatusCard(employeeId) {
         }
 
         console.log('   Status card updated successfully');
+        return response.status;
     } catch (error) {
         console.error('   Error updating status card:', error);
         showMessage('Failed to update status: ' + error.message, 'error');
+        return undefined;
     }
 }
 
