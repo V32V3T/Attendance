@@ -1,1 +1,79 @@
-# New-Attendance-app
+# Smart QR Attendance System
+
+A web-based QR code attendance tracking system that allows users to register, check in, and check out using QR code scanning. The application stores attendance data in Google Sheets.
+
+## Features
+
+- User registration with personal details
+- QR code scanning for attendance
+- Manual check-in and check-out options
+- Upload QR code images from gallery
+- Real-time attendance status updates
+- Location tracking (optional)
+- Mobile-responsive design
+
+## Setup Instructions
+
+### Prerequisites
+
+- Node.js installed
+- Vercel account for deployment
+- Google Cloud Platform account with Sheets API enabled
+- Google Service Account with access to Google Sheets
+
+### Environment Variables
+
+The following environment variables need to be set in your Vercel project:
+
+- `GOOGLE_SERVICE_ACCOUNT`: JSON string of your Google service account credentials
+- `GOOGLE_SHEET_ID`: ID of the Google Sheet where attendance data will be stored
+
+### Google Sheet Structure
+
+The application expects a Google Sheet with the following columns:
+- Full Name
+- Mobile
+- Employee ID
+- Department
+- Date
+- Check-in Time
+- Check-in Location
+- Check-out Time
+- Check-out Location
+
+If the sheet doesn't exist with these headers, the application will create them automatically.
+
+### Deployment
+
+1. Clone this repository
+2. Install dependencies: `npm install`
+3. Deploy to Vercel: `vercel`
+
+## Usage
+
+1. Open the application in a web browser
+2. Fill in your personal information and register
+3. Scan the QR code to check in
+4. Scan the QR code again to check out when leaving
+
+## QR Code
+
+The application is configured to recognize a specific QR code value. The default value is:
+```
+f29cZb7Q6DuaMjYkTLV3nxR9KEqV2XoBslrHcwA8d1tZ5UeqgiWTvjNpLEsQ
+```
+
+You can generate a QR code with this value using any QR code generator.
+
+## Troubleshooting
+
+If you encounter issues with the application:
+
+1. Check the browser console for error messages
+2. Verify that your environment variables are correctly set
+3. Ensure your Google service account has proper permissions
+4. Check that your Google Sheet has the correct structure
+
+## License
+
+This project is licensed under the MIT License.
