@@ -78,6 +78,9 @@ export default async function handler(req, res) {
 
     // --- Check-in ---
     if (action === 'check-in') {
+      // Debug log
+      console.log('Looking for:', employeeId, today);
+      console.log('Rows:', rows.map(r => [r[idIdx], r[dateIdx]]));
       if (userRowIdx === -1) {
         return res.status(400).json({ status: 'error', message: 'User not registered for today' });
       }
