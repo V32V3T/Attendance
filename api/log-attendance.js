@@ -72,7 +72,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ status: 'error', message: 'Missing action parameter' });
     }
     
-    if (!employeeId && action !== 'register') {
+    if (!employeeId && action !== 'register' && action !== 'validate-qr') {
       logDebug('Missing employeeId parameter');
       return res.status(400).json({ status: 'error', message: 'Missing employeeId parameter' });
     }
