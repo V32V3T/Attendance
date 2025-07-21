@@ -345,7 +345,7 @@ export default async function handler(req, res) {
     // --- Check-in ---
     if (action === 'check-in') {
       logDebug('Processing check-in', { employeeId, location });
-      
+
       // Only allow check-in if user is registered
       if (!isRegistered) {
         logDebug('User not registered', { employeeId });
@@ -354,24 +354,33 @@ export default async function handler(req, res) {
           message: 'User not registered. Please register first.' 
         });
       }
-      
+
       // If no row for today, append a new row for today
       if (userRowIdx === -1) {
         logDebug('No row for today, creating new row', { employeeId, today });
-        
+
+        // Ensure registeredUserData is complete
+        if (!registeredUserData || !registeredUserData.fullName || !registeredUserData.mobile || !registeredUserData.department) {
+          logDebug('Registration data missing or incomplete for check-in', { registeredUserData });
+          return res.status(400).json({
+            status: 'error',
+            message: 'Registration data missing. Please register again.'
+          });
+        }
+
         // Use the registered user data to create a complete row
         const newRow = [
-          registeredUserData.fullName || '',
-          registeredUserData.mobile || '',
+          registeredUserData.fullName,
+          registeredUserData.mobile,
           employeeId,
-          registeredUserData.department || '',
+          registeredUserData.department,
           today,
           '', // check-in time
           '', // check-in location
           '', // check-out time
           '', // check-out location
         ];
-        
+
         try {
           await sheets.spreadsheets.values.append({
             spreadsheetId: sheetId,
@@ -379,7 +388,7 @@ export default async function handler(req, res) {
             valueInputOption: 'USER_ENTERED',
             requestBody: { values: [newRow] }
           });
-          
+
           // Re-fetch rows to get the new row index
           try {
             const getRows2 = await sheets.spreadsheets.values.get({
