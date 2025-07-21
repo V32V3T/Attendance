@@ -345,7 +345,7 @@ export default async function handler(req, res) {
     // --- Check-in ---
     if (action === 'check-in') {
       logDebug('Processing check-in', { employeeId, location });
-
+      
       // Only allow check-in if user is registered
       if (!isRegistered) {
         logDebug('User not registered', { employeeId });
@@ -354,64 +354,38 @@ export default async function handler(req, res) {
           message: 'User not registered. Please register first.' 
         });
       }
-
+      
       // If no row for today, append a new row for today
       if (userRowIdx === -1) {
-        logDebug('No row for today, creating new row', { employeeId, today });
-
-        // Ensure registeredUserData is complete
-        if (!registeredUserData || !registeredUserData.fullName || !registeredUserData.mobile || !registeredUserData.department) {
-          logDebug('Registration data missing or incomplete for check-in', { registeredUserData });
-          return res.status(400).json({
-            status: 'error',
-            message: 'Registration data missing. Please register again.'
-          });
-        }
-
-        // Use the registered user data to create a complete row
+        // Find the most recent registration row for this employeeId
+        let regRow = rows.find(r => r[idIdx] === employeeId && r[0]);
+        const name = regRow ? regRow[0] : '';
+        const mobile = regRow ? regRow[1] : '';
+        const department = regRow ? regRow[3] : '';
         const newRow = [
-          registeredUserData.fullName,
-          registeredUserData.mobile,
+          name,
+          mobile,
           employeeId,
-          registeredUserData.department,
+          department,
           today,
           '', // check-in time
           '', // check-in location
           '', // check-out time
-          '', // check-out location
+          ''  // check-out location
         ];
-
-        try {
-          await sheets.spreadsheets.values.append({
-            spreadsheetId: sheetId,
-            range: 'Sheet1',
-            valueInputOption: 'USER_ENTERED',
-            requestBody: { values: [newRow] }
-          });
-
-          // Re-fetch rows to get the new row index
-          try {
-            const getRows2 = await sheets.spreadsheets.values.get({
-              spreadsheetId: sheetId,
-              range: 'Sheet1',
-            });
-            const rows2 = getRows2.data.values || [];
-            userRowIdx = rows2.length - 1;
-            logDebug('Created new row for today', { userRowIdx });
-          } catch (refetchError) {
-            logDebug('Error re-fetching rows after creating new row', refetchError);
-            return res.status(500).json({ 
-              status: 'error', 
-              message: 'Failed to create attendance record' 
-            });
-          }
-        } catch (appendError) {
-          logDebug('Error creating row for today', appendError);
-          return res.status(500).json({ 
-            status: 'error', 
-            message: 'Failed to create attendance record: ' + appendError.message 
-          });
-        }
+        await sheets.spreadsheets.values.append({
+          spreadsheetId: sheetId,
+          range: 'Sheet1',
+          valueInputOption: 'USER_ENTERED',
+          requestBody: { values: [newRow] }
+        });
+        // Re-fetch rows to get the new row index
+        const getRows2 = await sheets.spreadsheets.values.get({
+          spreadsheetId: sheetId,
+          range: 'Sheet1',
+        });
+        const rows2 = getRows2.data.values || [];
+        userRowIdx = rows2.length - 1;
       }
       
       // Re-fetch the current row to ensure we have the latest data
